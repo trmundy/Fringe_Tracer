@@ -28,8 +28,8 @@ def processor(inp,pic,flt,prm,lvl,buul,rad):
                 m = m-1
             while n>=len(ln1):
                 n = n-1
-            while m>=i-rad and m>0:
-                while n>=tj-rad and n>0:
+            while m>=i-rad and m>=0:
+                while n>=tj-rad and n>=0:
                     inp[m][n] += lvl
                     n = n-1
                 m = m-1
@@ -69,7 +69,8 @@ img_med_inv = 255-img_med
 
 dark_fringes = np.zeros_like(img_med_inv).astype(float)
 light_fringes = np.zeros_like(img_med).astype(float)
-
+p.step(0.5)
+win.update()
 dark_fringes = multiproc(dark_fringes,img_med_inv)
 light_fringes = multiproc(light_fringes,img_med)
 img_med_inv = img_med_inv.T
@@ -104,12 +105,12 @@ light_fringes = ((light_fringes/np.max(light_fringes))*255).astype(np.uint8)
 dark_fringe_img = Image.fromarray(dark_fringes)
 dark_fringe_img = dark_fringe_img.filter(ImageFilter.MedianFilter(size=3))
 dark_fringe_img = dark_fringe_img.filter(ImageFilter.GaussianBlur(radius=5))
-p.step(1)
+p.step(0.5)
 win.update()
 light_fringe_img = Image.fromarray(light_fringes)
 light_fringe_img = light_fringe_img.filter(ImageFilter.MedianFilter(size=3))
 light_fringe_img = light_fringe_img.filter(ImageFilter.GaussianBlur(radius=5))
-p.step(1)
+p.step(0.5)
 win.update()
 
 dark_fringes= np.array(dark_fringe_img).astype(float)
@@ -122,14 +123,14 @@ for i in range(len(output)):
         if output[i][j]<0:
             output[i][j]=0
     if i%tip == 0:
-        p.step(1)
+        p.step(1.0)
         win.update()
         
-output = ((output/np.max(output))*255).astype(int)
+output = ((output/np.max(output))*255).astype(np.uint8)
 output_img = Image.fromarray(output)
 output_img = output_img.filter(ImageFilter.MedianFilter(size=5))
 output = np.array(output_img)
-p.step(1)
+p.step(0.49)
 win.update()
 
 output_binary = np.zeros_like(output)
@@ -139,15 +140,15 @@ for i in range(len(output)):
         if output[i][j] > thrs:
             output_binary[i][j] = 1
     if i%tip == 0:
-        p.step(1)
+        p.step(1.0)
         win.update()
 
-fringe_traces = skeletonize(output_binary)
-fringe_traces = (1-fringe_traces).astype(np.uint8)
-fringe_traces = fringe_traces*255
+fringe_traces_bin = skeletonize(output_binary)
+
+fringe_traces = fringe_traces_bin.astype(np.uint8)
+fringe_traces = 1-fringe_traces
+fringe_traces = (255*fringe_traces).astype(np.uint8)
 fringe_traces_img = Image.fromarray(fringe_traces.T)
-p.step(0.99)
-win.update()
 
 fringe_traces_img.show()
 
@@ -155,6 +156,6 @@ flsv = tk.messagebox.askyesno(title="Save File?", message="Save Image?")
 if flsv:
     flsn = filedialog.asksaveasfilename(title="Save As")
     flext = simpledialog.askstring(title="Save as type", prompt="File type to save image as:")
-    fringe_traces_img.save(flsn,flext)
+    fringe_traces_img.save(flsn,flext,compress_level=0)
 
 win.destroy()
